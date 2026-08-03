@@ -1,1 +1,138 @@
+---
+format: html
+execute:
+  message: false
+  warning: false
+  echo: false
+---
+
 # Data
+
+```{r, libraries}
+library(tidyverse)
+library(gganimate)
+library(gifski)
+library(sf)
+library(rnaturalearth)
+```
+
+This project utilizes two primary data sources. Media tone characteristics were sourced from the GDELT Project (Global Database of Events Language and Tone), which monitors broadcast, print, and web news; organized at the article level, it lists the date and location of the media in addition to various tone, theme, and content measures. The database holds around 2.5T of information per year. GDELT has an open license and is free for the general public to use. While information spans decades, changes in methodology leaves data prior to 2015 unreliable. Ratings of disinformation detection for each nation of interest were derived from measures provided by the Digital Society Project (DSP). The DSP conducts research regarding the cross section of internet and politics. Since 2000 the project has gathered annual national data across 179 countries. In their primary dataset they measure 33 expert-rated indicators of freedoms in internet and politics. We isolated indicators of targeted misinformation campaigns and recorded data from 2015 to 2025 in order to match the scope of GDELT.
+
+\
+The data sources that we used have their own biases and perspectives. GDELT has worked hard to address the Western bias in their news collection, however, there is still a skew towards media in the English language and Western media, which means that countries that are not within the English Media environment will be systematically underrepresented in the news volume and possibly the tone variables. DSP is widely used in political and social science literature, however, it is also produced by an organization that has an interest in liberal democracy as the normative benchmark. Their scoring methodologies involve subjective expert judgement used to create indices that may reflect Western-leaning analytic frameworks. When using these indices, we have been transparent that we are using expert-coded perceptions of misinformation campaigns. We have been very clear in language about what we are measuring and not overstating the claims about our data and what it shows.
+
+## Transformations
+
+To begin media measure ingestion through the GDELT project we first had to design a system of aggregation at the country-year level. The database is accessible only through the Google service BigQuery, which limits interapplication operability but allows for SQL query interaction and data exporting. Due to these limitations we created a multilayered table view which we transferred as a flat file. GDELT’s raw data is stored at the article level, describing trillions of observations of article features.
+
+\
+Accessing the database through the Google service BigQuery we used SQL to measure 19 summary statistics at the country-year level overall and across 11 theme groups. Summary statistics encompassed article counts both raw and relative to that observation, positive/negative tone, language polarity, language activity/passivity, group vs self language, the presence of social media embeddings, average words lengths, and shares of world length buckets (short, medium, long, very long). Theme groups included one neutral theme and 10 themes derived from previous literature regarding the relationship between mass media and disinformation campaigns \[x\]. Articles were flagged as a particular theme according to content tags provided by GDELT. Of the thousands of possible content tags we chose 10-20 to represent each theme group in order to ensure specificity of grouping. These theme groups were non-exclusive with each article falling under 2 themes on average, a level we found appropriately representative of the varied nature of article content. GDELT querying resulted in  a raw aggregate table containing 3148 observations of 249 columns, which we then transformed into a final feature vector of 2591 observations of 174 variables.
+
+```{r, bar_theme_setup}
+full_features <- read_csv("~/GitHub/project-workbook-maggie-elliana/shared_data/GDELT-Aggregates_2.csv")
+themes <- full_features |> 
+  select("n_election_democracy", "n_governance_trust", "n_identity_division",
+         "n_migration_displacement", "n_public_health_crisis", "n_economic_instability",
+         "n_information_environment", "n_military_conflict", "n_cybersecurity_infrastructure",
+         "n_social_unrest", "n_climate_environment", "year")
+
+themes_yearly <- themes |> 
+  group_by(year) |> 
+  summarise(across(starts_with("n_"), \(x) sum(x, na.rm = TRUE)), .groups = "drop")
+
+themes_long <- themes_yearly |> 
+  pivot_longer(
+    cols = starts_with("n_"), names_to = "theme", values_to = "total"
+  ) |> 
+  mutate(theme = str_remove(theme, "^n_") |> str_replace_all("_", " ") |> str_to_title())
+
+theme_order_2015 <- themes_long |> 
+  filter(year == 2025) |> 
+  arrange(total) |> 
+  pull(theme)
+themes_long <- themes_long |> 
+  mutate(theme = factor(theme, levels = theme_order_2015))
+```
+
+:::: {.columns}
+
+::: {.column width="40%"}
+| Text Analysis Measures (per theme)                 |
+|-----------------------------------------------------|
+| Article Count (raw & relative)                     |
+| Language Tone (negative vs positive)               |
+| Language Polarity                                  |
+| Language Activity (vs passivity)                   |
+| Social Media Embeddings (presence & count)         |
+| World Length (average & count within each bucket)  |
+:::
+
+::: {.column width="60%"}
+
+```{r, bar_theme_graph}
+ggplot(themes_long, aes(x = factor(year), y = total, fill = theme)) +
+  geom_col(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(option = "turbo") +
+  labs(
+    x = "Year", y = "Proportion of Thematic Volume",
+    fill = "Theme",
+    title = "Yearly Proportional Makeup of Disinformation Themes"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+:::
+
+::::
+
+\
+To begin feature transformations we removed unuseful information which we recorded as a precaution, namely variation scores for each recorded average. Each theme’s metrics were then shrunk in comparison to the same measure of the baseline theme in that country-year. Shrinking allowed us to maintain the inherent social context of a nation or language and reduce the signal of themes with little record. Finally, measures were logged (or Center Log Ratioed) to account for the major skew.
+
+\
+Of the 33 variables selected from the DSP, we chose 4 which were averaged to create domestic-sourced and foreign-sourced dissemination campaigns respectively. The foreign score combines two DSP indicators: the frequency that foreign governments and their agents use social media to spread misleading information about a country's domestic politics, and the frequency that they do through paid advertisements. The domestic score similarly combines two indicators: how often a country's own government disseminates false information to influence its population, and how often major political parties and candidates do the same. Together, these capture disinformation spread through official state networks as well as partisan political organizations, both of which originate within the country and not from an out of country actor.
+
+```{r, map_setup}
+# have to match names to mapping data format
+name_map <- c(
+  "Eswatini"                  = "eSwatini", 
+  "Sao Tome and Principe"     = "São Tomé and Principe",
+  "South Sudan"               = "S. Sudan",
+  "Cote d'Ivoire"             = "Côte d'Ivoire",
+  "Equatorial Guinea"         = "Eq. Guinea",
+  "Dominican Republic"        = "Dominican Rep.",
+  "Cape Verde"                = "Cabo Verde",
+  "Central African Republic"  = "Central African Rep.",
+  "Congo (Kinshasa)"          = "Dem. Rep. Congo",
+  "Congo (Brazzaville)"       = "Congo",
+  "Solomon Islands"           = "Solomon Is.",
+  "Burma"                     = "Myanmar",
+  "Bosnia and Herzegovina"    = "Bosnia and Herz.",
+  "West Bank"                 = "Palestine"
+)
+full_final <- read_csv("~/GitHub/project-workbook-maggie-elliana/shared_data/full_feature_set.csv")
+countries_final <- full_final |>
+  mutate(country_name = recode(country_name, !!!name_map))
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+world_data <- left_join(world, countries_final, by = c("name" = "country_name"))
+```
+
+```{r, map_graph}
+p1 <- ggplot(world_data) +
+  geom_sf(aes(fill = Y_domestic), color = "gray80", linewidth = 0.1) +
+  scale_fill_viridis_c(
+    option = "plasma", na.value = "lightgray",
+    labels = scales::comma,
+    name = "Domestic\nDisinformation\nScore"
+  ) +
+  theme_void() +
+  ggtitle("National Domestic Disinformation Score: {closest_state}") +
+  transition_states(year, transition_length = 0, state_length = 1) +
+  enter_fade() +
+  exit_fade()
+```
+
+```{r, map_show}
+#animate(p1, nframes = 10, fps = 1, width = 600, height = 400, renderer = gifski_renderer())
+```
