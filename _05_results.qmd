@@ -8,7 +8,7 @@ execute:
 
 # Results
 
-```{r}
+```{r, libraries}
 library(tidyverse)
 ```
 
@@ -52,7 +52,7 @@ theme_Publication <- function(base_size=14, base_family="sans") {
 ```
 
 ```{r, interest_vars}
-full_set <- read_csv("~/GitHub/project-workbook-maggie-elliana/shared_data/full_feature_set.csv")
+full_set <- read_csv("sources/full_feature_set.csv")
 
 interest_vars <- full_set |> 
   select(c(logit_share_military_conflict,
@@ -62,7 +62,6 @@ interest_vars <- full_set |>
            logit_pct_strong_neg_information_environment,
            log_tone_var_election_democracy,
            Y_domestic))
-
 label_map <- c(
   logit_share_military_conflict = "Military Conflict Share",
   logit_share_election_democracy = "Democratic Election Share",
@@ -189,11 +188,3 @@ ggplot(importances, aes(x = measure_label, y = theme_label, fill = importance)) 
 ```
 
 
-| Text Analysis Measures (per theme)                 |
-|-----------------------------------------------------|
-| Article Count (raw & relative)                     |
-| Language Tone (negative vs positive)               |
-| Language Polarity                                  |
-| Language Activity (vs passivity)                   |
-| Social Media Embeddings (presence & count)         |
-| World Length (average & count within each bucket)  |

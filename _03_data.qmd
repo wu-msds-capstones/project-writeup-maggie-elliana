@@ -64,18 +64,16 @@ Ratings of disinformation detection for each nation of interest were derived fro
 To begin media measure ingestion through the GDELT project, we first had to design a system of aggregation at the country-year level, as the database's raw data is stored at the article level, describing trillions of observations of article features. The database is accessible only through the Google service BigQuery, which limits interapplication operability but allows for SQL query interaction and data exportation. Due to these limitations we created a multilayered table view which we transferred as a flat file. 
 
 ```{r, bar_theme_setup}
-full_gdelt <- read_csv("~/GitHub/project-workbook-maggie-elliana/shared_data/GDELT-Aggregates_2.csv")
-
-themes <- full_gdelt |> 
+full_GDELT <- read_csv("sources/GDELT_Aggregates.csv")
+themes_yearly <- full_gdelt |> 
   select("n_election_democracy", "n_governance_trust", "n_identity_division",
          "n_migration_displacement", "n_public_health_crisis", "n_economic_instability",
          "n_information_environment", "n_military_conflict", "n_cybersecurity_infrastructure",
          "n_social_unrest", "n_climate_environment", "year")
 
-themes_yearly <- themes |> 
+themes_yearly <- themes_yearly |> 
   group_by(year) |> 
   summarise(across(starts_with("n_"), \(x) sum(x, na.rm = TRUE)), .groups = "drop")
-
 themes_yearly <- themes_yearly |> 
   pivot_longer(
     cols = starts_with("n_"), names_to = "theme", values_to = "total"
@@ -128,4 +126,10 @@ Our final aggregated dataset included 19 summary statistics at the country-year 
 
 To begin feature transformations we removed unuseful information which we recorded as a precaution, namely variation scores for each recorded average. Each theme’s metrics were then shrunk in comparison to the same measure of the baseline theme in that country-year. Shrinking allowed us to maintain the inherent social context of a nation or language and reduce the signal of themes with little record. Finally, measures were logged (or Center Log Ratioed) to account for the major skew in the data. 
 
-Of the 33 variables selected from the DSP, we chose 4 which were averaged to create a domestic-sourced and a foreign-sourced dissemination score variable respectively. The foreign score combines two DSP indicators: the frequency that foreign governments and their agents use social media to spread misleading information about a country's domestic politics, and the frequency that they do through paid advertisements. The domestic score similarly combines two indicators: how often a country's own government disseminates false information to influence its population, and how often major political parties and candidates do the same. Together, these capture disinformation spread through official state networks as well as partisan political organizations, both of which originate within the country and not from a foreign actor. ![](images/map_animation.gif)
+Of the 33 variables selected from the DSP, we chose 4 which were averaged to create a domestic-sourced and a foreign-sourced dissemination score variable respectively. The foreign score combines two DSP indicators: the frequency that foreign governments and their agents use social media to spread misleading information about a country's domestic politics, and the frequency that they do through paid advertisements. The domestic score similarly combines two indicators: how often a country's own government disseminates false information to influence its population, and how often major political parties and candidates do the same. Together, these capture disinformation spread through official state networks as well as partisan political organizations, both of which originate within the country and not from a foreign actor.
+
+```{r, map_gif}
+# gif was generated outside and imported due to rendering limitations of the package
+```
+
+![](images/map_animation.gif)

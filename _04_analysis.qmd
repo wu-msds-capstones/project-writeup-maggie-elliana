@@ -1,1 +1,3 @@
 # Analysis
+
+Predictive Modeling was accomplished using Random Forest and XGBoost models. Linear Modeling was used to explore both dimensionality reduction and prediction, but was ultimately ineffective. Random Forest modeling was first conducted in order to reduce dimensions and rerun on the smaller feature vector as a predictive tool using both country-groupings and time series analysis. Concerns of limited complexity led us to also run a XGBoost model with similar constraints. 

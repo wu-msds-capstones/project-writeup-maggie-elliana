@@ -1,4 +1,11 @@
 # References
 
 :::{#refs}
+[1] Benkler, Y., Faris, R., & Roberts, H. Network Propaganda. Oxford University Press, 2018.
+[2] Mazarr, M. J., et al. Hostile Social Manipulation: Present Realities and Emerging Trends. RAND Corporation, 2019.
+[3] Leetaru, K., & Schrodt, P. GDELT: Global Data on Events, Location and Tone, 2013.
+[4] Sato, Y., Wiebrecht, F., & Lindberg, S. I. Disinformation and Regime Survival. Political Research Quarterly, 2024.
+[5] Mechkova, V., Pemstein, D., Seim, B., & Wilson, S. Digital Society Project Dataset v8. Digital Society Project, 2026.
+[6] Carnegie Endowment for International Peace. Countering Disinformation Effectively: An Evidence-Based Policy Guide. Carnegie Endowment for International Peace, 2024.
+[7] Ozili, Peterson K, The Acceptable R-Square in Empirical Modelling for Social Science Research. Social Research Methodology and Publishing Results, 2022.
 :::
