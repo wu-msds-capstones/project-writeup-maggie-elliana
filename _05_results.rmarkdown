@@ -1,7 +1,5 @@
 ---
-format: 
-  html:
-    embed-resources: true
+format: html
 execute:
   message: false
   warning: false
@@ -188,5 +186,6 @@ ggplot(importances, aes(x = measure_label, y = theme_label, fill = importance)) 
        title = "Feature Importance by Theme and Measure \nin RF Predicting Domestic Disinformation Dissemination",
        caption = "SOURCE: GDELT Project & Digital Society Project")
 ```
+
 
 
