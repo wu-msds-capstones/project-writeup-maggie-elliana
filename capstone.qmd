@@ -8,6 +8,7 @@ bibliography: references.bib
 title-block-banner: true
 format: 
   html:
+    embed-resources: true
     theme:
       light: lightly
       dark: darkly
