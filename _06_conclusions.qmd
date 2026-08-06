@@ -8,7 +8,7 @@ In contrast, features capturing thematic content, particularly the relative prev
 
 Notably, our models are cross-nationally predictive and do not take regional differences into account. Patterns are reflective of global consistency while much literature is specific to a nation of interest. Capturing specific patterns would require more complex modeling and greater observations to support such work.
 
-## Limitations 
+## Limitations
 
 This study has several limitations related to data sources. First, GDELT's underlying news coverage is known to have some geographically imbalance, with substantially more coverage of Western, English language media relative to non Western sources. This imbalance likely affects the representativeness of our media characteristics for countries with less GDELT coverage, and may partially explain weaker or noisier model performance in underrepresented regions. Second, our thematic categories, while interpretable, were relatively narrow and specific, which may have limited the model's ability to capture broader disinformation narratives that do not map cleanly onto a single theme that we chose. Third, our outcome measure relies on a single expert-coded source, the Digital Society Project. While DSP offers valuable cross-national comparability, expert-coded measures can carry annotation biases from the pool of country experts consulted, and our analysis would likely benefit from a second, independent expert-rating source to help validate DSP's disinformation intensity scores.
 

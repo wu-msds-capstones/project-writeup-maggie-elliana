@@ -64,7 +64,7 @@ Ratings of disinformation detection for each nation of interest were derived fro
 To begin media measure ingestion through the GDELT project, we first had to design a system of aggregation at the country-year level, as the database's raw data is stored at the article level, describing trillions of observations of article features. The database is accessible only through the Google service BigQuery, which limits interapplication operability but allows for SQL query interaction and data exportation. Due to these limitations we created a multilayered table view which we transferred as a flat file. 
 
 ```{r, bar_theme_setup}
-full_GDELT <- read_csv("sources/GDELT_Aggregates.csv")
+full_gdelt <- read_csv("sources/GDELT_Aggregates.csv")
 themes_yearly <- full_gdelt |> 
   select("n_election_democracy", "n_governance_trust", "n_identity_division",
          "n_migration_displacement", "n_public_health_crisis", "n_economic_instability",
