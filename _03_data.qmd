@@ -8,7 +8,7 @@ execute:
 
 # Data
 
-```{r, libraries}
+```{r, libraries_3}
 library(tidyverse)
 library(gganimate)
 library(gifski)
@@ -18,7 +18,7 @@ library(ggthemes)
 library(paletteer)
 ```
 
-```{r, publication_theme}
+```{r, publication_theme_3}
 theme_Publication <- function(base_size=14, base_family="sans") {
       library(grid)
       library(ggthemes)
