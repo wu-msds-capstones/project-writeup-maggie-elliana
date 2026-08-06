@@ -1,1 +1,190 @@
+---
+format: html
+execute:
+  message: false
+  warning: false
+  echo: false
+---
+
 # Results
+
+```{r, libraries_5}
+library(tidyverse)
+```
+
+```{r, publication_theme_5}
+
+theme_Publication <- function(base_size=14, base_family="sans") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5, margin = margin(0,0,20,0)),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               plot.caption = element_text(hjust = 0),
+               plot.caption.position = "plot",
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line.x = element_line(colour="black"),
+               axis.line.y = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.box = "vetical",
+               legend.key.size= unit(0.5, "cm"),
+               #legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+       ))
+      
+}
+
+```
+
+```{r, interest_vars}
+full_set <- read_csv("sources/full_feature_set.csv")
+
+interest_vars <- full_set |> 
+  select(c(logit_share_military_conflict,
+           logit_share_election_democracy,
+           logit_pct_strong_neg_identity_division,
+           logit_pct_strong_neg_election_democracy,
+           logit_pct_strong_neg_information_environment,
+           log_tone_var_election_democracy,
+           Y_domestic))
+label_map <- c(
+  logit_share_military_conflict = "Military Conflict Share",
+  logit_share_election_democracy = "Democratic Election Share",
+  logit_pct_strong_neg_identity_division = "Identity Division Share Negative",
+  logit_pct_strong_neg_election_democracy = "Democratic Election Share Negative",
+  logit_pct_strong_neg_information_environment = "Info Environment Share Negative",
+  log_tone_var_election_democracy = "Democratic Election Tone Variance"
+)
+```
+
+```{r, x_y_graphs}
+interest_vars |>
+  pivot_longer(cols = -Y_domestic, names_to = "variable", values_to = "value") |>
+  group_by(variable) |>
+  filter(between(value, quantile(value, 0.025), quantile(value, 0.975))) |>
+  ungroup() |>
+  ggplot(aes(x = value, y = Y_domestic)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(method = "loess", color = "firebrick", se = FALSE) +
+  facet_wrap(~variable, scales = "free_x",
+             labeller = labeller(variable = label_map)) +
+  theme_minimal() +
+  theme_Publication() +
+  labs(title = "Top Features vs. Domestic Disinformation Score",
+       x = NULL, y = "Y Domestic",
+       caption = "SOURCE: GDELT & Digital Society Project \nExplantory variables have been log transformed. \nSmoother is clipped to the middle 95% of each variable's range to limit distortion")
+```
+
+::::: columns
+::: {.column width="50%"}
+|      | GroupKFold | XGBoost | XGBoost(Δ) |
+|------|------------|---------|-----------|
+| R^2^ | 0.386      | 0.342   | 0.347     |
+| MAE  | 0.787      | 0.811   | 0.806     |
+| RMSE | 0.993      | 1.029   | 1.025     |
+:::
+
+::: {.column width="50%"}
+:::
+:::::
+
+```{r, importance_measures}
+importances <- read_csv("~/GitHub/project-workbook-maggie-elliana/shared_data/feature_importances.csv") |> 
+  select(feature = `...1`, importance = `0`)
+
+themes <- c(
+  "military_conflict",
+  "identity_division",
+  "information_environment",
+  "election_democracy",
+  "economic_instability",
+  "cybersecurity_infrastructure",
+  "governance_trust",
+  "climate_environment",
+  "migration_displacement",
+  "public_health_crisis",
+  "social_unrest"
+)
+
+theme_pattern <- paste0("(", paste(themes[order(-nchar(themes))], collapse = "|"), ")$")
+
+importances <- importances |>
+  mutate(
+    theme = str_extract(feature, theme_pattern),
+    measure = str_remove(feature, paste0("_?", theme_pattern)) |> str_remove("_$")
+  )
+```
+
+```{r, importance_labels}
+theme_labels <- c(
+  military_conflict = "Military Conflict",
+  identity_division = "Identity Division",
+  information_environment = "Info Environment",
+  election_democracy = "Election / Democracy",
+  economic_instability = "Economic Instability",
+  cybersecurity_infrastructure = "Cybersecurity",
+  governance_trust = "Governance Trust",
+  climate_environment = "Climate / Environment",
+  migration_displacement = "Migration / Displacement",
+  public_health_crisis = "Public Health Crisis",
+  social_unrest = "Social Unrest"
+)
+
+measure_labels <- c(
+  logit_share = "Article Share",
+  logit_social_share = "Social Media Share",
+  logit_pct_strong_neg = "% Strongly Negative",
+  logit_pct_strong_pos = "% Strongly Positive",
+  log_tone_var = "Tone Variance",
+  log_polar_var = "Polarity Variance",
+  log_activity_var = "Activity Variance",
+  log_group_var = "Group Variance",
+  log_n = "Article Count",
+  log_avg_words = "Avg. Word Length",
+  clr_short_share = "Short Article Share",
+  clr_medium_share = "Medium Article Share",
+  clr_long_share = "Long Article Share"
+)
+
+importances <- importances |>
+  mutate(
+    theme_label = recode(as.character(theme), !!!theme_labels),
+    measure_label = recode(as.character(measure), !!!measure_labels)
+  )
+```
+
+```{r, importance_heatmap}
+#| fig-width: 8
+#| fig-height: 6
+ggplot(importances, aes(x = measure_label, y = theme_label, fill = importance)) +
+  geom_tile(color = "white", linewidth = 0.3) +
+  scale_fill_viridis_c(name = "Importance") +
+  theme_Publication() +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank(),
+    legend.position = "right",
+    legend.direction = "vertical",
+    legend.key.height = unit(1.25, "cm")
+  ) +
+  labs(x = "Measure", y = "Theme", 
+       title = "Feature Importance by Theme and Measure \nin RF Predicting Domestic Disinformation Dissemination",
+       caption = "SOURCE: GDELT Project & Digital Society Project")
+```
+
+
