@@ -2,8 +2,8 @@
 title: "Capstone Project"
 subtitle: Subtitle
 authors:
-  - Bob
-  - Jane
+  - Maggie Giardello
+  - Elliana Pastrano
 bibliography: references.bib
 title-block-banner: true
 format: 
